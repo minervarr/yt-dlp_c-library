@@ -1,0 +1,290 @@
+# ============================================================================
+# Build directories
+# ============================================================================
+build/
+cmake-build-*/
+out/
+Build/
+
+# ============================================================================
+# CMake
+# ============================================================================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+install_manifest.txt
+compile_commands.json
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+# ============================================================================
+# Compiled Object files
+# ============================================================================
+*.slo
+*.lo
+*.o
+*.obj
+*.ko
+*.elf
+
+# ============================================================================
+# Precompiled Headers
+# ============================================================================
+*.gch
+*.pch
+
+# ============================================================================
+# Compiled Dynamic libraries
+# ============================================================================
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# ============================================================================
+# Compiled Static libraries
+# ============================================================================
+*.lai
+*.la
+*.a
+*.lib
+
+# ============================================================================
+# Executables
+# ============================================================================
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+ytdlp
+ytdlp-cli
+
+# ============================================================================
+# Debug files
+# ============================================================================
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# ============================================================================
+# IDE and Editor files
+# ============================================================================
+
+# Visual Studio / VSCode
+.vs/
+.vscode/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# CLion / IntelliJ
+.idea/
+cmake-build-*/
+*.iml
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Vim
+*.swp
+*.swo
+*.swn
+.*.sw[a-z]
+*~
+Session.vim
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# Testing
+# ============================================================================
+Testing/
+test_detail.xml
+tests/test-results/
+*.gcda
+*.gcno
+*.gcov
+
+# Coverage reports
+coverage/
+*.coverage
+htmlcov/
+
+# ============================================================================
+# Documentation
+# ============================================================================
+docs/html/
+docs/latex/
+docs/doxygen/
+*.dox
+Doxyfile.bak
+
+# ============================================================================
+# Package managers
+# ============================================================================
+
+# Conan
+conan.lock
+conanbuildinfo.*
+conaninfo.txt
+graph_info.json
+
+# vcpkg
+vcpkg_installed/
+
+# ============================================================================
+# OS specific
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Profiling and debugging
+# ============================================================================
+*.prof
+*.gprof
+perf.data*
+callgrind.out.*
+cachegrind.out.*
+massif.out.*
+vgcore.*
+core
+core.*
+
+# Valgrind
+*.memcheck
+*.helgrind
+*.drd
+*.cachegrind
+*.callgrind
+*.massif
+
+# ============================================================================
+# Sanitizers
+# ============================================================================
+*.asan
+*.tsan
+*.ubsan
+*.msan
+
+# ============================================================================
+# Backup files
+# ============================================================================
+*.bak
+*.backup
+*~
+
+# ============================================================================
+# Logs
+# ============================================================================
+*.log
+logs/
+
+# ============================================================================
+# Temporary files
+# ============================================================================
+*.tmp
+*.temp
+tmp/
+temp/
+
+# ============================================================================
+# Downloaded test files (videos, etc.)
+# ============================================================================
+test_downloads/
+*.mp4
+*.webm
+*.mkv
+*.flv
+*.avi
+*.mov
+*.wmv
+*.mp3
+*.m4a
+*.opus
+*.flac
+
+# ============================================================================
+# Third-party libraries (if using package managers)
+# ============================================================================
+# Note: We're committing third_party/ directory with all dependencies
+# If you want to use system libraries or package managers instead,
+# uncomment the line below:
+# third_party/
+
+# ============================================================================
+# CI/CD
+# ============================================================================
+.cache/
+.pytest_cache/
+.tox/
+
+# ============================================================================
+# Custom
+# ============================================================================
+# Add any project-specific ignores here
