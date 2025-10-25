@@ -106,9 +106,9 @@ add_subdirectory(third_party/pugixml EXCLUDE_FROM_ALL)
 message(STATUS "  ✓ pugixml configured")
 
 # QuickJS - JavaScript interpreter
-# QuickJS doesn't have CMakeLists.txt, we'll add it later when needed
-message(STATUS "QuickJS...")
-message(STATUS "  → Skipped (no CMakeLists.txt, will integrate manually later)")
+message(STATUS "Configuring QuickJS...")
+add_subdirectory(third_party/quickjs EXCLUDE_FROM_ALL)
+message(STATUS "  ✓ QuickJS configured")
 
 # FFmpeg - External tool, not built
 message(STATUS "FFmpeg...")
@@ -147,6 +147,7 @@ target_link_libraries(ytdlp-lib-test
         spdlog::spdlog
         cxxopts::cxxopts
         pugixml
+        quickjs
         Boost::regex
         Boost::system
         Boost::filesystem
@@ -155,6 +156,45 @@ target_link_libraries(ytdlp-lib-test
 
 message(STATUS "  ✓ Test executable configured")
 message(STATUS "")
+
+# ============================================================================
+# CLI Executable
+# ============================================================================
+
+add_executable(yt-dlp-cpp
+    src/main.cpp
+    src/extractor/youtube.cpp
+    src/extractor/info_extractor.cpp
+    src/core/youtube_dl.cpp
+    src/networking/curl_http_client.cpp
+    src/networking/request.cpp
+    src/networking/response.cpp
+    src/networking/cookie.cpp
+    src/networking/cookie_jar.cpp
+    src/networking/http_header_dict.cpp
+    src/utils/string_utils.cpp
+    src/utils/filesystem_utils.cpp
+    src/utils/json_utils.cpp
+    src/utils/network_utils.cpp
+    src/utils/js_interpreter.cpp
+)
+
+target_include_directories(yt-dlp-cpp PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(yt-dlp-cpp PRIVATE
+    CURL::libcurl
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    fmt::fmt
+    spdlog::spdlog
+    nlohmann_json::nlohmann_json
+    cxxopts::cxxopts
+    quickjs
+)
+
+target_compile_features(yt-dlp-cpp PRIVATE cxx_std_17)
 
 # ============================================================================
 # Unit Tests

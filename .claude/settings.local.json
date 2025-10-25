@@ -18,7 +18,10 @@
       "Bash(ctest:*)",
       "Bash(./tests/unit/filesystem_utils_test \"basename extracts filename\")",
       "Bash(./tests/unit/filesystem_utils_test:*)",
-      "Bash(./tests/unit/parse_utils_test)"
+      "Bash(./tests/unit/parse_utils_test)",
+      "Bash(./tests/unit/date_utils_test)",
+      "Bash(xargs:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

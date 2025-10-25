@@ -535,37 +535,7 @@ std::optional<double> parse_float(std::string_view str) {
     return std::nullopt;
 }
 
-// NOTE: parse_filesize() has been moved to parse_utils.cpp
-// This stub is kept for backwards compatibility
-// TODO: Remove once all code uses parse_utils.hpp
-
-std::string format_bytes(int64_t bytes) {
-    const char* units[] = {"B", "KiB", "MiB", "GiB", "TiB"};
-    int unit_index = 0;
-    double size = static_cast<double>(bytes);
-
-    while (size >= 1024.0 && unit_index < 4) {
-        size /= 1024.0;
-        ++unit_index;
-    }
-
-    return fmt::format("{:.2f} {}", size, units[unit_index]);
-}
-
-// NOTE: parse_duration() has been moved to parse_utils.cpp
-// This stub is kept for backwards compatibility
-// TODO: Remove once all code uses parse_utils.hpp
-
-std::string format_seconds(int seconds, std::string_view delimiter, bool msec) {
-    int hours = seconds / 3600;
-    int minutes = (seconds % 3600) / 60;
-    int secs = seconds % 60;
-
-    if (hours > 0) {
-        return fmt::format("{}{}{:02d}{}{:02d}", hours, delimiter, minutes, delimiter, secs);
-    } else {
-        return fmt::format("{}{}{:02d}", minutes, delimiter, secs);
-    }
-}
+// NOTE: parse_filesize(), parse_duration(), format_bytes(), and format_seconds()
+// have been moved to number_utils.cpp
 
 } // namespace ytdlp::utils
