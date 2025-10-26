@@ -1,6 +1,7 @@
 #include "ytdlp/networking/curl_http_client.hpp"
 #include "ytdlp/utils/network_utils.hpp"
 #include <sstream>
+#include <fstream>
 #include <stdexcept>
 #include <cstring>
 #include <algorithm>
@@ -242,6 +243,10 @@ void CurlHttpClient::set_curl_options(CURL* curl) {
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, config_.connect_timeout);
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, config_.timeout);
 
+    // Low-speed abort (stall detection) - abort if speed < low_speed_limit for low_speed_time seconds
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, config_.low_speed_limit);
+    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, config_.low_speed_time);
+
     // Redirects
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, config_.follow_redirects ? 1L : 0L);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, config_.max_redirects);
@@ -336,6 +341,122 @@ size_t CurlHttpClient::header_callback(
     }
 
     return total_size;
+}
+
+// ============================================================================
+// Streaming download implementation
+// ============================================================================
+
+struct DownloadContext {
+    std::ofstream* file;
+    std::function<void(int64_t, int64_t)>* progress_callback;
+    int64_t total_bytes;
+    int64_t downloaded_bytes;
+};
+
+size_t CurlHttpClient::file_write_callback(
+    char* ptr,
+    size_t size,
+    size_t nmemb,
+    void* userdata
+) {
+    size_t total_size = size * nmemb;
+    auto* ctx = static_cast<DownloadContext*>(userdata);
+
+    if (ctx->file && ctx->file->is_open()) {
+        ctx->file->write(ptr, total_size);
+        if (!ctx->file->good()) {
+            // Write error
+            return 0;
+        }
+    }
+
+    return total_size;
+}
+
+int CurlHttpClient::progress_callback(
+    void* clientp,
+    curl_off_t dltotal,
+    curl_off_t dlnow,
+    curl_off_t ultotal,
+    curl_off_t ulnow
+) {
+    auto* ctx = static_cast<DownloadContext*>(clientp);
+
+    if (ctx->progress_callback && *ctx->progress_callback) {
+        (*ctx->progress_callback)(static_cast<int64_t>(dlnow), static_cast<int64_t>(dltotal));
+    }
+
+    // Return 0 to continue, non-zero to abort
+    return 0;
+}
+
+bool CurlHttpClient::download_to_file(
+    const std::string& url,
+    const std::string& output_path,
+    const std::map<std::string, std::string>& headers,
+    std::function<void(int64_t, int64_t)> progress_callback
+) {
+    // Open output file
+    std::ofstream output_file(output_path, std::ios::binary);
+    if (!output_file) {
+        throw std::runtime_error("Failed to open output file: " + output_path);
+    }
+
+    // Reset curl handle
+    curl_.reset();
+    CURL* curl = curl_.get();
+
+    // Setup download context
+    DownloadContext ctx;
+    ctx.file = &output_file;
+    ctx.progress_callback = &progress_callback;
+    ctx.total_bytes = 0;
+    ctx.downloaded_bytes = 0;
+
+    // Set URL
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+    // Set headers
+    CurlHeaders curl_headers;
+    for (const auto& [key, value] : headers) {
+        curl_headers.append(key + ": " + value);
+    }
+    if (curl_headers.get()) {
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers.get());
+    }
+
+    // Set write callback to write directly to file
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, file_write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
+
+    // Set progress callback (use static member function, not the std::function parameter)
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, CurlHttpClient::progress_callback);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &ctx);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+
+    // Set standard options
+    set_curl_options(curl);
+
+    // Execute request
+    CURLcode res = curl_easy_perform(curl);
+
+    // Close file
+    output_file.close();
+
+    if (res != CURLE_OK) {
+        throw std::runtime_error(std::string("CURL error: ") + curl_easy_strerror(res));
+    }
+
+    // Check HTTP status code
+    long response_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+    if (response_code != 200 && response_code != 206) {
+        return false;
+    }
+
+    return true;
 }
 
 } // namespace ytdlp::networking

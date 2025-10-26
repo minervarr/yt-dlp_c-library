@@ -52,11 +52,24 @@ const std::map<int, std::map<std::string, nlohmann::json>> YoutubeIE::FORMAT_MAP
     {45, {{"ext", "webm"}, {"width", 1280}, {"height", 720}, {"acodec", "vorbis"}, {"vcodec", "vp8"}}},
     {46, {{"ext", "webm"}, {"width", 1920}, {"height", 1080}, {"acodec", "vorbis"}, {"vcodec", "vp8"}}},
 
-    // WebM DASH video
+    // WebM DASH video - VP9
     {247, {{"ext", "webm"}, {"height", 720}, {"vcodec", "vp9"}, {"acodec", "none"}}},
     {248, {{"ext", "webm"}, {"height", 1080}, {"vcodec", "vp9"}, {"acodec", "none"}}},
     {271, {{"ext", "webm"}, {"height", 1440}, {"vcodec", "vp9"}, {"acodec", "none"}}},
+    {272, {{"ext", "webm"}, {"height", 4320}, {"vcodec", "vp9"}, {"acodec", "none"}}},  // 8K
     {313, {{"ext", "webm"}, {"height", 2160}, {"vcodec", "vp9"}, {"acodec", "none"}}},
+    {315, {{"ext", "webm"}, {"height", 4320}, {"vcodec", "vp9"}, {"acodec", "none"}}},  // 8K 60fps
+
+    // WebM DASH video - AV1
+    {394, {{"ext", "mp4"}, {"height", 144}, {"vcodec", "av01.0.00M.08"}, {"acodec", "none"}}},
+    {395, {{"ext", "mp4"}, {"height", 240}, {"vcodec", "av01.0.00M.08"}, {"acodec", "none"}}},
+    {396, {{"ext", "mp4"}, {"height", 360}, {"vcodec", "av01.0.01M.08"}, {"acodec", "none"}}},
+    {397, {{"ext", "mp4"}, {"height", 480}, {"vcodec", "av01.0.04M.08"}, {"acodec", "none"}}},
+    {398, {{"ext", "mp4"}, {"height", 720}, {"vcodec", "av01.0.05M.08"}, {"acodec", "none"}}},
+    {399, {{"ext", "mp4"}, {"height", 1080}, {"vcodec", "av01.0.08M.08"}, {"acodec", "none"}}},
+    {400, {{"ext", "mp4"}, {"height", 1440}, {"vcodec", "av01.0.12M.08"}, {"acodec", "none"}}},
+    {401, {{"ext", "mp4"}, {"height", 2160}, {"vcodec", "av01.0.12M.08"}, {"acodec", "none"}}},
+    {402, {{"ext", "mp4"}, {"height", 4320}, {"vcodec", "av01.0.13M.08"}, {"acodec", "none"}}},  // 8K
 
     // WebM DASH audio
     {249, {{"ext", "webm"}, {"acodec", "opus"}, {"abr", 50}, {"vcodec", "none"}}},
@@ -409,6 +422,7 @@ core::InfoDict YoutubeIE::_real_extract(const std::string& url) {
     std::string player_url;
     try {
         player_url = _extract_player_url(video_id);
+        to_screen("[" + ie_key() + "] Player URL extracted successfully");
     } catch (const std::exception& e) {
         report_warning(
             "Could not extract player URL: " + std::string(e.what()) + "\n"
@@ -417,7 +431,9 @@ core::InfoDict YoutubeIE::_real_extract(const std::string& url) {
         );
     }
 
+    to_screen("[" + ie_key() + "] Extracting formats...");
     auto formats = _extract_formats(player_response["streamingData"], video_id, player_url);
+    to_screen("[" + ie_key() + "] Extracted " + std::to_string(formats.size()) + " formats");
 
     if (formats.empty()) {
         throw std::runtime_error("No formats found - video may require signature decryption or authentication");
@@ -458,32 +474,39 @@ std::string YoutubeIE::_extract_player_url(const std::string& video_id) {
     std::string watch_url = "https://www.youtube.com/watch?v=" + video_id;
 
     to_screen("[" + ie_key() + "] " + video_id + ": Downloading webpage to extract player URL");
+    to_screen("[" + ie_key() + "] Making HTTP GET request...");
 
     auto response = http_client.get(watch_url);
+    to_screen("[" + ie_key() + "] HTTP request completed, checking status...");
+
     if (!response.is_success()) {
         throw std::runtime_error("Failed to download YouTube webpage");
     }
 
+    to_screen("[" + ie_key() + "] Reading response body...");
     std::string webpage = response.read_all();
+    to_screen("[" + ie_key() + "] Response read complete, size: " + std::to_string(webpage.size()));
 
-    // Extract player URL using regex patterns
-    // Pattern: /s/player/{id}/player_ias.vflset/en_US/base.js
-    std::vector<std::regex> patterns = {
-        std::regex(R"###("jsUrl"\s*:\s*"(/s/player/[^"]+)")###"),
-        std::regex(R"###("PLAYER_JS_URL"\s*:\s*"(/s/player/[^"]+)")###"),
-        std::regex(R"(/s/player/([a-zA-Z0-9_-]{8,})/player)"),
+    // Extract player URL using simpler string search (avoid regex catastrophic backtracking)
+    // Look for: "jsUrl":"/s/player/..." or "PLAYER_JS_URL":"/s/player/..."
+    std::vector<std::string> search_patterns = {
+        "\"jsUrl\":\"",
+        "\"PLAYER_JS_URL\":\"",
+        "/s/player/"
     };
 
-    for (const auto& pattern : patterns) {
-        std::smatch match;
-        if (std::regex_search(webpage, match, pattern)) {
-            if (match.size() > 1) {
-                std::string player_path = match[1].str();
-                // Make it a full URL
-                if (player_path[0] == '/') {
+    to_screen("[" + ie_key() + "] Searching for player URL...");
+    for (const auto& search_str : search_patterns) {
+        size_t pos = webpage.find(search_str);
+        if (pos != std::string::npos) {
+            size_t url_start = webpage.find("/s/player/", pos);
+            if (url_start != std::string::npos) {
+                size_t url_end = webpage.find("\"", url_start);
+                if (url_end != std::string::npos) {
+                    std::string player_path = webpage.substr(url_start, url_end - url_start);
+                    to_screen("[" + ie_key() + "] Found player URL: " + player_path);
                     return "https://www.youtube.com" + player_path;
                 }
-                return player_path;
             }
         }
     }
@@ -524,10 +547,14 @@ std::string YoutubeIE::_download_player(const std::string& player_url) {
     }
 
     auto& http_client = downloader()->http_client();
+    to_screen("[" + ie_key() + "] Got HTTP client, fetching: " + player_url);
+
     auto response = http_client.get(player_url);
+    to_screen("[" + ie_key() + "] HTTP request completed");
 
     if (!response.is_success()) {
-        throw std::runtime_error("Failed to download player from: " + player_url);
+        throw std::runtime_error("Failed to download player from: " + player_url +
+                               " (HTTP " + std::to_string(response.status()) + ")");
     }
 
     std::string player_code = response.read_all();

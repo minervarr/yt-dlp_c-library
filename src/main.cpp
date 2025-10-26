@@ -3,6 +3,7 @@
 #include "ytdlp/networking/curl_http_client.hpp"
 #include <iostream>
 #include <fstream>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cxxopts.hpp>
@@ -105,7 +106,7 @@ std::pair<core::InfoDict, std::optional<core::InfoDict>> select_best_formats(
     }
 
     // If we have both best video and best audio, return them for merging
-    if (best_video_height > 0 && best_audio_bitrate > 0) {
+    if (best_score > -1 && best_audio_bitrate > 0) {
         return {best_video, best_audio};
     }
 
@@ -138,14 +139,14 @@ std::pair<core::InfoDict, std::optional<core::InfoDict>> select_best_formats(
 }
 
 /**
- * Download a file from URL to output path.
+ * Download a file from URL to output path using streaming.
  */
 bool download_file(const std::string& url, const std::string& output_path,
                    networking::CurlHttpClient& http_client) {
     fmt::print("Downloading from: {}\n", url);
     fmt::print("Saving to: {}\n", output_path);
 
-    // Create request with YouTube-compatible headers
+    // Create headers for YouTube-compatible download
     std::map<std::string, std::string> headers = {
         {"User-Agent", "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip"},
         {"Accept", "*/*"},
@@ -153,33 +154,63 @@ bool download_file(const std::string& url, const std::string& output_path,
         {"Accept-Encoding", "gzip, deflate"},
         {"Range", "bytes=0-"}
     };
-    networking::Request request(url, "GET", headers);
+
+    // Progress tracking
+    auto start_time = std::chrono::steady_clock::now();
+    int64_t last_bytes = 0;
+    auto last_update = start_time;
+
+    // Progress callback - shows download progress like yt-dlp
+    auto progress_callback = [&](int64_t downloaded, int64_t total) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update).count();
+
+        // Update every 500ms to avoid spamming
+        if (elapsed > 500 || downloaded == total) {
+            double speed = 0.0;
+            if (elapsed > 0) {
+                speed = (downloaded - last_bytes) / (elapsed / 1000.0); // bytes per second
+            }
+
+            if (total > 0) {
+                double percent = (100.0 * downloaded) / total;
+                double total_mb = total / (1024.0 * 1024.0);
+                double speed_mb = speed / (1024.0 * 1024.0);
+
+                // Calculate ETA
+                int64_t remaining = total - downloaded;
+                int eta_seconds = (speed > 0) ? (remaining / speed) : 0;
+
+                fmt::print("\r[download] {:.1f}% of {:.2f}MB at {:.2f}MB/s ETA {:02d}:{:02d}",
+                          percent, total_mb, speed_mb, eta_seconds / 60, eta_seconds % 60);
+                std::fflush(stdout);
+            } else {
+                // Total size unknown
+                double downloaded_mb = downloaded / (1024.0 * 1024.0);
+                double speed_mb = speed / (1024.0 * 1024.0);
+                fmt::print("\r[download] {:.2f}MB at {:.2f}MB/s", downloaded_mb, speed_mb);
+                std::fflush(stdout);
+            }
+
+            last_bytes = downloaded;
+            last_update = now;
+        }
+    };
 
     try {
-        // Download
-        auto response = http_client.execute(request);
+        // Use streaming download
+        bool success = http_client.download_to_file(url, output_path, headers, progress_callback);
 
-        // Accept both 200 (OK) and 206 (Partial Content from Range request)
-        if (response.status() != 200 && response.status() != 206) {
-            fmt::print(stderr, "HTTP error: {}\n", response.status());
+        if (success) {
+            fmt::print("\nDownload complete!\n");
+            return true;
+        } else {
+            fmt::print("\n");
             return false;
         }
-
-        // Write to file
-        std::ofstream file(output_path, std::ios::binary);
-        if (!file) {
-            fmt::print(stderr, "Failed to open output file: {}\n", output_path);
-            return false;
-        }
-
-        auto body = response.read_bytes();
-        file.write(reinterpret_cast<const char*>(body.data()), body.size());
-
-        fmt::print("Download complete! Size: {} bytes\n", body.size());
-        return true;
 
     } catch (const std::exception& e) {
-        fmt::print(stderr, "Download failed: {}\n", e.what());
+        fmt::print("\nDownload failed: {}\n", e.what());
         return false;
     }
 }
@@ -225,7 +256,9 @@ int main(int argc, char** argv) {
         }
 
         // Extract video information
+        fmt::print("Calling extract()...\n");
         core::InfoDict info = youtube.extract(url);
+        fmt::print("Extract completed successfully!\n");
 
         if (!quiet || info_only) {
             fmt::print("\nVideo Information:\n");
@@ -251,10 +284,11 @@ int main(int argc, char** argv) {
             if (info.contains("formats") && info["formats"].is_array()) {
                 fmt::print("\nAvailable formats: {}\n", info["formats"].size());
 
-                // Debug: Show all formats
+                // Debug: Show all formats (or first 20 if too many)
                 if (!quiet) {
                     auto formats = info["formats"].get<std::vector<core::InfoDict>>();
-                    for (size_t i = 0; i < formats.size() && i < 5; i++) {
+                    size_t max_show = std::min(formats.size(), size_t(20));
+                    for (size_t i = 0; i < max_show; i++) {
                         const auto& fmt = formats[i];
                         fmt::print("  Format #{}: ", i+1);
                         if (fmt.contains("format_id")) {
@@ -272,7 +306,14 @@ int main(int argc, char** argv) {
                         if (fmt.contains("acodec")) {
                             fmt::print("acodec={} ", fmt["acodec"].get<std::string>());
                         }
+                        if (fmt.contains("filesize")) {
+                            double mb = fmt["filesize"].get<int64_t>() / (1024.0 * 1024.0);
+                            fmt::print("size={:.1f}MB ", mb);
+                        }
                         fmt::print("\n");
+                    }
+                    if (formats.size() > max_show) {
+                        fmt::print("  ... and {} more formats\n", formats.size() - max_show);
                     }
                 }
             }
