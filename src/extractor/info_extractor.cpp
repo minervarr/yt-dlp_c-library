@@ -4,6 +4,7 @@
 #include "ytdlp/networking/request.hpp"
 #include "ytdlp/networking/response.hpp"
 #include "ytdlp/utils/string_utils.hpp"
+#include "ytdlp/utils/json_utils.hpp"
 #include <stdexcept>
 #include <iostream>
 
@@ -485,7 +486,7 @@ core::InfoDict InfoExtractor::_search_json_ld(
     for (const auto& json_ld : json_lds) {
         // Check type if specified
         if (expected_type.has_value()) {
-            std::string type = core::info::get_string(json_ld, "@type", "");
+            std::string type = utils::json::get_string(json_ld, "@type", "");
             if (type != expected_type.value()) {
                 continue;
             }
@@ -493,11 +494,11 @@ core::InfoDict InfoExtractor::_search_json_ld(
 
         // Extract common video properties
         if (json_ld.contains("name")) {
-            info["title"] = core::info::get_string(json_ld, "name");
+            info["title"] = utils::json::get_string(json_ld, "name");
         }
 
         if (json_ld.contains("description")) {
-            info["description"] = core::info::get_string(json_ld, "description");
+            info["description"] = utils::json::get_string(json_ld, "description");
         }
 
         if (json_ld.contains("thumbnailUrl")) {
@@ -510,7 +511,7 @@ core::InfoDict InfoExtractor::_search_json_ld(
         }
 
         if (json_ld.contains("uploadDate")) {
-            info["upload_date"] = core::info::get_string(json_ld, "uploadDate");
+            info["upload_date"] = utils::json::get_string(json_ld, "uploadDate");
         }
 
         if (json_ld.contains("duration")) {
@@ -524,14 +525,14 @@ core::InfoDict InfoExtractor::_search_json_ld(
         }
 
         if (json_ld.contains("contentUrl")) {
-            info["url"] = core::info::get_string(json_ld, "contentUrl");
+            info["url"] = utils::json::get_string(json_ld, "contentUrl");
         }
 
         // Extract uploader info
         if (json_ld.contains("author")) {
             auto author = json_ld["author"];
             if (author.is_object() && author.contains("name")) {
-                info["uploader"] = core::info::get_string(author, "name");
+                info["uploader"] = utils::json::get_string(author, "name");
             } else if (author.is_string()) {
                 info["uploader"] = author.get<std::string>();
             }
@@ -548,6 +549,116 @@ core::InfoDict InfoExtractor::_search_json_ld(
     }
 
     return info;
+}
+
+nlohmann::json InfoExtractor::_download_json(
+    const std::string& url,
+    const std::string& video_id,
+    const std::optional<std::string>& note,
+    const std::optional<std::string>& errnote,
+    bool fatal,
+    const std::map<std::string, std::string>& query
+) {
+    // Build URL with query parameters
+    std::string full_url = url;
+    if (!query.empty()) {
+        std::string query_str;
+        for (const auto& [key, value] : query) {
+            if (!query_str.empty()) query_str += "&";
+            query_str += utils::url_encode(key) + "=" + utils::url_encode(value);
+        }
+        full_url += (url.find('?') == std::string::npos ? "?" : "&") + query_str;
+    }
+
+    // Download webpage
+    std::string json_text = _download_webpage(full_url, video_id, note, errnote, fatal);
+
+    if (json_text.empty()) {
+        return nlohmann::json();
+    }
+
+    // Parse JSON
+    return _parse_json(json_text, video_id, std::nullopt, fatal);
+}
+
+std::map<std::string, std::string> InfoExtractor::_form_hidden_inputs(
+    const std::string& form_id,
+    std::string_view html
+) const {
+    std::map<std::string, std::string> inputs;
+
+    // Find the form
+    std::string form_pattern = R"(<form[^>]+id\s*=\s*["\'])" + form_id + R"(["\'][^>]*>([\s\S]*?)</form>)";
+    std::string form_content = _search_regex(form_pattern, html, "form " + form_id, std::nullopt, false);
+
+    if (form_content.empty()) {
+        throw std::runtime_error("Form not found: " + form_id);
+    }
+
+    // Extract all input fields
+    std::regex input_pattern(R"(<input[^>]+type\s*=\s*["\']hidden["\'][^>]*>)", std::regex::icase);
+    std::string content_str(form_content);
+
+    auto begin = std::sregex_iterator(content_str.begin(), content_str.end(), input_pattern);
+    auto end = std::sregex_iterator();
+
+    for (std::sregex_iterator i = begin; i != end; ++i) {
+        std::string input_tag = (*i).str();
+
+        // Extract name attribute
+        std::regex name_re(R"(name\s*=\s*["\']([^"\']+)["\'])", std::regex::icase);
+        std::smatch name_match;
+        if (!std::regex_search(input_tag, name_match, name_re) || name_match.size() < 2) {
+            continue;
+        }
+        std::string name = name_match[1].str();
+
+        // Extract value attribute
+        std::regex value_re(R"(value\s*=\s*["\']([^"\']*)["\'])", std::regex::icase);
+        std::smatch value_match;
+        std::string value;
+        if (std::regex_search(input_tag, value_match, value_re) && value_match.size() >= 2) {
+            value = value_match[1].str();
+        }
+
+        inputs[name] = value;
+    }
+
+    // Also check for non-hidden inputs and other form fields
+    std::regex all_input_pattern(R"(<input[^>]+name\s*=\s*["\']([^"\']+)["\'][^>]*>)", std::regex::icase);
+    auto begin2 = std::sregex_iterator(content_str.begin(), content_str.end(), all_input_pattern);
+
+    for (std::sregex_iterator i = begin2; i != end; ++i) {
+        std::string input_tag = (*i).str();
+        std::smatch match = *i;
+
+        if (match.size() < 2) continue;
+        std::string name = match[1].str();
+
+        // Skip if already added
+        if (inputs.find(name) != inputs.end()) {
+            continue;
+        }
+
+        // Extract value
+        std::regex value_re(R"(value\s*=\s*["\']([^"\']*)["\'])", std::regex::icase);
+        std::smatch value_match;
+        std::string value;
+        if (std::regex_search(input_tag, value_match, value_re) && value_match.size() >= 2) {
+            value = value_match[1].str();
+        }
+
+        inputs[name] = value;
+    }
+
+    return inputs;
+}
+
+std::smatch InfoExtractor::_match_valid_url(const std::string& url) const {
+    // This is a virtual method that should be overridden by subclasses
+    // For the base class, we just return an empty match
+    std::smatch match;
+    return match;
 }
 
 } // namespace ytdlp::extractor
