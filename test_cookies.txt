@@ -1,0 +1,37 @@
+# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.zoom.us	TRUE	/	TRUE	0	_zm_ssid	us02_c_ExmOmxVoS9SAZ5I89FkinQ
+.zoom.us	TRUE	/	TRUE	1798158269	_zm_mtk_guid	2aa0f54f4b15467a8db57d9d66eb7484
+.zoom.us	TRUE	/	TRUE	0	_zm_csp_script_nonce	fZBGMHLrRqS4gYoledMcAA
+.zoom.us	TRUE	/	TRUE	1763684761	_zm_currency	USD
+.zoom.us	TRUE	/	TRUE	1795134269	_zm_visitor_guid	c010b17858c14c548847cbbcc283624d
+.zoom.us	TRUE	/	TRUE	1763600069	__cf_bm	y4qTbjc1c5Qs3X.5ja5D5j2KqrlSJNuAqOiekj51hbo-1763598269-1.0.1.1-x02Vxf3Xrh7Nl2_kg3OwAvn6uiYjh540PwWEy_DgF8X1DHZSFJ8iwoJoEzfzU0f452RHyl7.pVJ3LvOYaLnOfYoU8LXi80.19B5u6.9Otig
+.zoom.us	TRUE	/	FALSE	1798158361	wULrMv6t	Ax__pZ6aAQAA_2V8hpa3Kt20Ki6yLl7J5RGaiqAK10lcT6fNnw5EPC95MxLeAYT7AuuSsNCMwH9gfTJdYD2ykA|1|0|a54bf1a4ace5279334503d6dce90a3278583d4de
+.zoom.us	TRUE	/	FALSE	1779150364	optimizelySession	1763598364417
+.zoom.us	TRUE	/	TRUE	0	_zm_page_auth	us02_c_y_uR9MEKSHik8dMNeiae0Q
+.zoom.us	TRUE	/	TRUE	1795134367	_zm_lang	en-US
+.zoom.us	TRUE	/	FALSE	1795134364	OptanonConsent	isGpcEnabled=0&datestamp=Wed+Nov+19+2025+19%3A26%3A04+GMT-0500+(Peru+Standard+Time)&version=6.21.0&isIABGlobal=false&hosts=&consentId=854878ce-f01f-49e9-b8b9-02a796e1d242&interactionCount=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1&geolocation=PE%3BLMA&AwaitingReconsent=false
+.zoom.us	TRUE	/	TRUE	1795134364	OnetrustActiveGroups	C0001C0002C0003C0004
+.zoom.us	TRUE	/	TRUE	1798158274	_zm_tracking_guid	4d21ddc1a4684cea977cc289ad258487
+.zoom.us	TRUE	/	TRUE	1795134276	_zm_fingerprint	266dbd1639ca6a315c23c7cf8651cf05
+.zoom.us	TRUE	/	FALSE	1795134278	OptanonAlertBoxClosed	2025-11-20T00:24:38.754Z
+us02web.zoom.us	FALSE	/	TRUE	0	cred	4C2B830C98C5797E94F14ACC34C36F23
+.us02web.zoom.us	TRUE	/	TRUE	1763600167	__cf_bm	iHPFd7mPGHtEReahTI8Jq6SDp_gN1jcBbFbvE0NNgbw-1763598367-1.0.1.1-QU_Ywo_sYUGrJNnMDdIrBpHEScB7fDDOYEXVyex.VlzOP_FH_Ok8wlTW598wKnXSQ_VzCmSlxPomkNzGlFpXzlI4QA3Nu8bheYFOlPOJ9LI
+.zoom.us	TRUE	/	TRUE	1798158318	_zm_cid2	1%3BMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEu159Ucoi4P05a8Zd0uay%2BfwemVMEghLfWO2yimU9bJfRFKipO7uvOzGMik29tXDYdjf1IQ3ZzD3zNIRee4CH1w%3D%3D%3BZ2IwczRhRjhUQ05p%3BMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE%2F8wXnY6Juwb%2FxnD8QH8alVM%2BFvdng%2BSPOEsZJQ5DX%2BbA8h%2F7MJzBKjl1Vf0UUG4wi7GACl%2F2nw94wgl29QDmgA%3D%3D%3Bqlq6EOCfC5frlJS33TZYWzjzDZ8bVSdGyprxR6eM%2FN19WT4lwZ7JTKUgbkV1EsvIZ%2BntOfHQQeWo%2B%2FBeOakNWixptt9Xuev0XeJYgL9HYe1l2NIy8uzuKhkjuBVzToqqy0%2FnAzFrYhg%3D
+us02web.zoom.us	FALSE	/	TRUE	1763600167	_sp_ses.aec4	*
+us02web.zoom.us	FALSE	/	TRUE	1798158367	_sp_id.aec4	3481b7b3-43bb-43ef-bdf6-362a0c72309d.1763598324.1.1763598367..7bf96291-1272-4bbd-805e-e4f1c3ed66b1....0
+.zoom.us	TRUE	/	TRUE	0	zm_cluster	us02
+.zoom.us	TRUE	/	TRUE	0	zm_aid	b1zbM7KcQieicO-iiC8gpw
+.zoom.us	TRUE	/	TRUE	0	zm_haid	435
+.zoom.us	TRUE	/	TRUE	1798158360	_zm_login_acctype	6
+.zoom.us	TRUE	/	TRUE	1795134360	_zm_multi_ac	~USER_CRYPTO~DI7UyAmFOyxmlTyzZQAAEwEAAKqai2h08e-fMNQ1EaFnyYP_Z9OLNkRYMjiRijFFKb80xZP_ZHdRvWY141c2k9JzVojeHpbtFjSj1z-V8FcgB5GIloiFRRwVCYIDRSaVZgl3T_mhjbKOAdQBWeBV89nJQFz-drjklsIjIU-eoylKhQNetc65cjWsV4XQKunhkhnt8SVQVTHcrP46AJv4-199ZPbF1rXx9VjiLxsUSP9khN7vGY20zkx4ELNMTgSghfmm8QWwEtEs7Rd-M2UZ6kXyLSNzP_UhmQevsigA6adoPUdXM6lPjuVG3OOX1IXSQD3V1xr2LbB7XZ7v93Sx8fDFfVp1iKkhcrKA2HKKgQZjCGRFvaZx7PHzid3audQOgr0aX2OTW15O0pED-Ye3mSSOBOitxDAwMDAwMQ
+.zoom.us	TRUE	/	TRUE	1771374360	_zm_kms	us02_c_UkRiR2F1SDBqMGFUbHpmUXVJNjRQUSUzRCUzRDpTQzBtcnMlMkJCWUsxNFNFMHBTVlUlMkZEdyUzRCUzRA
+.zoom.us	TRUE	/	TRUE	0	zm_huid	5c44eb6c978786cfef32232a0bc3c701
+.zoom.us	TRUE	/	TRUE	1763605561	_zm_cms_guid	DNhlkQTVaKyO0IF1wQAAFgAAAPy9BiErUsitE3CIRcGr5IzJ7k6AXJ3uQlmIxaGAG4iRWds_p3whMDAwMDAx
+.zoom.us	TRUE	/	TRUE	0	_zm_date_format	mm/dd/yy
+.zoom.us	TRUE	/	TRUE	0	_zm_date_format_standard	MM/DD/YYYY
+.zoom.us	TRUE	/	TRUE	0	_zm_12-hour	0
+.zoom.us	TRUE	/	TRUE	0	_zm_start_day_of_week	7
+.zoom.us	TRUE	/	TRUE	1763619963	_zm_cdn_blocked	log_unblk

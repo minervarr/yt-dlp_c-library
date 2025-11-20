@@ -7,6 +7,14 @@
 #include <stdexcept>
 #include <sstream>
 
+// Bring utility functions into scope for cleaner code
+using ytdlp::utils::get_string;
+using ytdlp::utils::get_int;
+using ytdlp::utils::get_bool;
+using ytdlp::utils::get_array;
+using ytdlp::utils::get_object;
+using ytdlp::utils::get_string_at_path;
+
 namespace ytdlp::extractor {
 
 // Converted from Python _VALID_URL:
@@ -157,9 +165,9 @@ std::string ZoomIE::_get_real_webpage(
         );
 
         // Check validation result
-        auto status = utils::json::get_bool(validation, "status", false);
+        auto status = get_bool(validation, "status", false);
         if (!status) {
-            auto error_msg = utils::json::get_string(validation, "errorMessage", "Password validation failed");
+            auto error_msg = get_string(validation, "errorMessage", "Password validation failed");
             throw std::runtime_error(error_msg);
         }
 
@@ -196,7 +204,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
 
         nlohmann::json page_data = _get_page_data(webpage, video_id);
 
-        auto meeting_id = utils::json::get_string(page_data, "meetingId", "");
+        auto meeting_id = get_string(page_data, "meetingId", "");
         if (meeting_id.empty()) {
             throw std::runtime_error("Unable to extract meeting ID from share page");
         }
@@ -216,7 +224,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
             true
         );
 
-        auto redirect_path = utils::json::get_string_at_path(share_info, "/result/redirectUrl", "");
+        auto redirect_path = get_string_at_path(share_info, "/result/redirectUrl", "");
         if (redirect_path.empty()) {
             throw std::runtime_error("Unable to extract redirect URL from share info");
         }
@@ -237,7 +245,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
 
     nlohmann::json page_data = _get_page_data(webpage, video_id);
 
-    auto file_id = utils::json::get_string(page_data, "fileId", "");
+    auto file_id = get_string(page_data, "fileId", "");
     if (file_id.empty()) {
         throw std::runtime_error("Unable to extract file ID (video may be expired or unavailable)");
     }
@@ -258,7 +266,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
         query
     );
 
-    auto data = utils::json::get_object(play_info, "result");
+    auto data = get_object(play_info, "result");
     if (data.is_null()) {
         throw std::runtime_error("Invalid play info response");
     }
@@ -269,7 +277,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
 
     for (const auto& type : subtitle_types) {
         std::string url_key = type + "Url";
-        auto subtitle_url = utils::json::get_string(data, url_key, "");
+        auto subtitle_url = get_string(data, url_key, "");
 
         if (!subtitle_url.empty()) {
             // Make URL absolute if needed
@@ -277,9 +285,8 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
                 subtitle_url = base_url + subtitle_url.substr(1);
             }
 
-            subtitles[type] = nlohmann::json::array({
-                {{"url", subtitle_url}, {"ext", "vtt"}}
-            });
+            subtitles[type] = nlohmann::json::array();
+            subtitles[type].push_back(nlohmann::json{{"url", subtitle_url}, {"ext", "vtt"}});
         }
     }
 
@@ -287,7 +294,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
     nlohmann::json formats = nlohmann::json::array();
 
     // Camera stream (viewMp4Url)
-    auto view_url = utils::json::get_string(data, "viewMp4Url", "");
+    auto view_url = get_string(data, "viewMp4Url", "");
     if (!view_url.empty()) {
         nlohmann::json format;
         format["format_note"] = "Camera stream";
@@ -297,14 +304,14 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
         format["preference"] = 0;
 
         // Extract resolution
-        auto view_resolutions = utils::json::get_array(data, "viewResolvtions");
+        auto view_resolutions = get_array(data, "viewResolvtions");
         if (view_resolutions.size() >= 2) {
             format["width"] = view_resolutions[0].get<int>();
             format["height"] = view_resolutions[1].get<int>();
         }
 
         // Extract file size
-        auto file_size_mb = utils::json::get_string_at_path(data, "/recording/fileSizeInMB", "");
+        auto file_size_mb = get_string_at_path(data, "/recording/fileSizeInMB", "");
         if (!file_size_mb.empty()) {
             try {
                 double size_mb = std::stod(file_size_mb);
@@ -318,7 +325,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
     }
 
     // Screen share stream (shareMp4Url)
-    auto share_url = utils::json::get_string(data, "shareMp4Url", "");
+    auto share_url = get_string(data, "shareMp4Url", "");
     if (!share_url.empty()) {
         nlohmann::json format;
         format["format_note"] = "Screen share stream";
@@ -328,7 +335,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
         format["preference"] = -1;
 
         // Extract resolution
-        auto share_resolutions = utils::json::get_array(data, "shareResolvtions");
+        auto share_resolutions = get_array(data, "shareResolvtions");
         if (share_resolutions.size() >= 2) {
             format["width"] = share_resolutions[0].get<int>();
             format["height"] = share_resolutions[1].get<int>();
@@ -338,7 +345,7 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
     }
 
     // Combined camera + screen share (viewMp4WithshareUrl)
-    auto view_with_share_url = utils::json::get_string(data, "viewMp4WithshareUrl", "");
+    auto view_with_share_url = get_string(data, "viewMp4WithshareUrl", "");
     if (!view_with_share_url.empty()) {
         nlohmann::json format;
         format["format_note"] = "Screen share with camera";
@@ -365,13 +372,13 @@ core::InfoDict ZoomIE::_real_extract(const std::string& url) {
     info["id"] = video_id;
 
     // Extract title
-    auto title = utils::json::get_string_at_path(data, "/meet/topic", "");
+    auto title = get_string_at_path(data, "/meet/topic", "");
     if (!title.empty()) {
         info["title"] = title;
     }
 
     // Extract duration
-    auto duration = utils::json::get_int(data, "duration", -1);
+    auto duration = get_int(data, "duration", -1);
     if (duration > 0) {
         info["duration"] = duration;
     }
