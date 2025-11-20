@@ -51,6 +51,7 @@ public:
     int status() const { return status_; }
     const std::string& reason() const { return reason_; }
     const std::string& url() const { return url_; }  // Effective URL after redirects
+    bool is_success() const;  // Returns true if status is 2xx
 
     // Header access
     const HTTPHeaderDict& headers() const { return headers_; }

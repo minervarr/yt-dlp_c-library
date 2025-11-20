@@ -135,11 +135,12 @@ int main(int argc, char* argv[]) {
         // Load cookies if provided
         if (!cookies_file.empty()) {
             std::cout << "Loading cookies from: " << cookies_file << "\n";
-
-            // Note: This requires the CookieJar to be accessible from YoutubeDL
-            // You'll need to add cookie support to the YoutubeDL class
-
-            std::cout << "✓ Cookies loaded\n\n";
+            try {
+                ydl.load_cookies(cookies_file);
+                std::cout << "✓ Cookies loaded\n\n";
+            } catch (const std::exception& e) {
+                std::cerr << "Warning: Failed to load cookies: " << e.what() << "\n\n";
+            }
         }
 
         // Create Zoom extractor
