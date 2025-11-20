@@ -179,4 +179,8 @@ const std::any* Response::get_extension(std::string_view key) const {
     return nullptr;
 }
 
+bool Response::is_success() const {
+    return status_ >= 200 && status_ < 300;
+}
+
 } // namespace ytdlp::networking
